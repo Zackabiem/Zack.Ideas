@@ -17,7 +17,7 @@ A simple Django web app that allows students to register/login and upload assign
 # 1) Extract the zip
 cd student_assignment_tracker
 
-# 2) (Optional) Create a virtual environment
+# 2)  Create a virtual environment
 python -m venv venv
 # Windows
 venv\Scripts\activate
