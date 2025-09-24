@@ -4,7 +4,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'dev-secret-key-change-me'
+SECRET_KEY = ''
 DEBUG = True
 ALLOWED_HOSTS = []
 
