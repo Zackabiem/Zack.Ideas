@@ -14,25 +14,24 @@ A simple Django web app that allows students to register/login and upload assign
 
 ## Setup (Windows/Mac/Linux)
 ```bash
-# 1) Extract the zip
-cd student_assignment_tracker
 
-# 2)  Create a virtual environment
+
+# 1)  Create a virtual environment
 python -m venv venv
 # Windows
 venv\Scripts\activate
 # Linux/Mac
 # source venv/bin/activate
 
-# 3) Install dependencies
+# 2) Install dependencies
 pip install -r requirements.txt
 
-# 4) Create DB & superuser
+# 3) Create DB & superuser
 python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser
 
-# 5) Run
+# 4) Run
 python manage.py runserver
 ```
 
@@ -48,8 +47,8 @@ Visit: http://127.0.0.1:8000/
 
 ## Notes
 - Uploaded files are saved under `media/assignments/`
-- Create 'media/'
+- Create `media/`
 - To change DEBUG or SECRET_KEY, edit `student_assignment_tracker/settings.py`
 - For production, configure STATIC/MEDIA in a proper web server.
 
-- see password.txt for test users
+- see `password.txt` for test users
