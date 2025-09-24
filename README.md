@@ -48,7 +48,8 @@ Visit: http://127.0.0.1:8000/
 
 ## Notes
 - Uploaded files are saved under `media/assignments/`
+- Create 'media/'
 - To change DEBUG or SECRET_KEY, edit `student_assignment_tracker/settings.py`
 - For production, configure STATIC/MEDIA in a proper web server.
 
-- superuser zack - 12345 - zack@gmail.com
+- see password.txt for test users
