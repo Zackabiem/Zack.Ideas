@@ -1,0 +1,19 @@
+{% extends "tracker/base.html" %}
+{% block content %}
+<h2>{{ assignment.title }} - Submissions</h2>
+
+<ul>
+  {% for s in submissions %}
+    <li>
+      {{ s.student.user.username }} → 
+      {% if s.score %}
+        {{ s.score }}/{{ assignment.max_score }}
+      {% else %}
+        Pending
+      {% endif %}
+    </li>
+  {% empty %}
+    <li>No submissions yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

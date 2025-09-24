@@ -1,0 +1,63 @@
+{% extends "tracker/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">{{ title }}</h2>
+
+  <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
+    {% csrf_token %}
+
+    <!-- Render form errors -->
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        <strong>Please fix the errors below:</strong>
+        <ul class="mb-0">
+          {% for field, errors in form.errors.items %}
+            <li><strong>{{ field|capfirst }}</strong>: {{ errors|join:", " }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <!-- Assignment Title -->
+    <div class="mb-3">
+      {{ form.title.label_tag }}
+      {{ form.title }}
+    </div>
+
+    <!-- Description -->
+    <div class="mb-3">
+      {{ form.description.label_tag }}
+      {{ form.description }}
+      <small class="form-text text-muted">Provide details or instructions for this assignment.</small>
+    </div>
+
+    <!-- File Upload -->
+    <div class="mb-3">
+      {{ form.file.label_tag }}
+      {{ form.file }}
+      <small class="form-text text-muted">Optional: Upload a sample file (PDF, Word, etc.).</small>
+    </div>
+
+    <!-- Subject -->
+    <div class="mb-3">
+      {{ form.subject.label_tag }}
+      {{ form.subject }}
+    </div>
+
+    <!-- Max Score -->
+    <div class="mb-3">
+      {{ form.max_score.label_tag }}
+      {{ form.max_score }}
+      <small class="form-text text-muted">Maximum marks for this assignment.</small>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-between">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a href="{% url 'assignment_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

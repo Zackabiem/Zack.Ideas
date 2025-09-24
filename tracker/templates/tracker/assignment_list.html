@@ -1,0 +1,104 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Assignments{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>
+    {% if user.profile.role == "teacher" %}
+      My Created Assignments
+    {% elif user.profile.role == "student" %}
+      My Submissions
+    {% else %}
+      All Assignments
+    {% endif %}
+  </h2>
+
+  {% if user.profile.role == "teacher" or user.is_superuser %}
+    <a href="{% url 'assignment_create' %}" class="btn btn-primary">New Assignment</a>
+  {% endif %}
+</div>
+
+<table class="table table-striped table-bordered">
+  <thead class="table-dark">
+    <tr>
+      <th>Title</th>
+      <th>Subject</th>
+      <th>Class</th>
+      {% if user.profile.role == "student" %}
+        <th>Submitted</th>
+        <th>Score</th>
+        <th>Feedback</th>
+      {% else %}
+        <th>Due Date</th>
+        <th>Submissions</th>
+      {% endif %}
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if user.profile.role == "student" %}
+      {# Student: show their submissions #}
+      {% for submission in submissions %}
+        <tr>
+          <td>{{ submission.assignment.title }}</td>
+          <td>{{ submission.assignment.subject.name }}</td>
+          <td>{{ submission.assignment.classroom.name }}</td>
+          <td>{{ submission.submitted_at|date:"Y-m-d H:i" }}</td>
+          <td>
+            {% if submission.score %}
+              {{ submission.score }}/{{ submission.assignment.max_score }}
+            {% else %}
+              Pending
+            {% endif %}
+          </td>
+          <td>{{ submission.feedback|default:"-" }}</td>
+          <td>
+            <a href="{{ submission.answer_file.url }}" target="_blank" class="btn btn-sm btn-info">View</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">You have no submissions yet.</td></tr>
+      {% endfor %}
+    {% else %}
+      {# Teacher/Admin: show assignments created #}
+      {% for assignment in assignments %}
+        <tr>
+          <td>{{ assignment.title }}</td>
+          <td>{{ assignment.subject.name }}</td>
+          <td>{{ assignment.classroom.name }}</td>
+          <td>{{ assignment.due_date|date:"Y-m-d H:i" }}</td>
+          <td>{{ assignment.submissions.count }}</td>
+          <td>
+            <a href="{% url 'assignment_update' assignment.pk %}" class="btn btn-sm btn-secondary">Edit</a>
+            <a href="{% url 'assignment_delete' assignment.pk %}" class="btn btn-sm btn-danger">Delete</a>
+            <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-sm btn-info">View Submissions</a>
+          
+            {% if user.is_staff or user.is_superuser %}
+          
+              {% for submission in assignment.submissions.all %}
+              <li>
+                {{ submission.student.user.username }} 
+                → Score: {% if submission.score %}{{ submission.score }}{% else %}Pending{% endif %}
+
+                {% if submission.id %}
+                  <a href="{% url 'grade_submission' submission.id %}" class="btn btn-sm btn-outline-primary">
+                    Grade
+                  </a>
+                {% endif %}
+              </li>
+                  {% empty %}
+                    <li>No submissions yet.</li>
+                  {% endfor %}
+
+            {% endif %}
+
+
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No assignments created yet.</td></tr>
+      {% endfor %}
+    {% endif %}
+  </tbody>
+</table>
+{% endblock %}

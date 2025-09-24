@@ -1,0 +1,37 @@
+{% extends "tracker/base.html" %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+
+<h3>Reminders</h3>
+<ul>
+  <li>Assignments with no submissions: {{ pending_assignments.count }}</li>
+  <li>Ungraded submissions: {{ ungraded_submissions.count }}</li>
+</ul>
+
+<h3>Teachers</h3>
+<ul>
+  {% for t in teachers %}
+    <li>{{ t.user.username }}</li>
+  {% empty %}
+    <li>No teachers yet.</li>
+  {% endfor %}
+</ul>
+
+<h3>Students</h3>
+<ul>
+  {% for s in students %}
+    <li>{{ s.user.username }} (Class: {{ s.classroom.name }})</li>
+  {% empty %}
+    <li>No students yet.</li>
+  {% endfor %}
+</ul>
+
+<h3>Assignments</h3>
+<ul>
+  {% for a in assignments %}
+    <li>{{ a.title }} → Class: {{ a.classroom.name }}</li>
+  {% empty %}
+    <li>No assignments yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "tracker/base.html" %}
+
+{% block content %}
+  <h2>Grade Submission</h2>
+
+  <p><strong>Student:</strong> {{ submission.student.user.username }}</p>
+  <p><strong>Assignment:</strong> {{ submission.assignment.title }}</p>
+
+  {% if submission.answer_text %}
+    <p><strong>Answer (Text):</strong></p>
+    <p>{{ submission.answer_text }}</p>
+  {% endif %}
+
+  {% if submission.answer_file %}
+    <p><strong>Answer File:</strong></p>
+    <!-- Option 1: Download -->
+    <a href="{{ submission.answer_file.url }}" download>Download File</a><br>
+    <!-- Option 2: Open in new tab -->
+    <a href="{{ submission.answer_file.url }}" target="_blank">Open File in New Tab</a>
+  {% else %}
+    <p><em>No file uploaded.</em></p>
+  {% endif %}
+
+  <hr>
+
+  <form method="post">
+    {% csrf_token %}
+    <label for="score">Score:</label>
+    <input type="number" name="score" id="score" value="{{ submission.score|default_if_none:'' }}" required><br><br>
+
+    <label for="feedback">Feedback:</label><br>
+    <textarea name="feedback" id="feedback" rows="4" cols="50">{{ submission.feedback }}</textarea><br><br>
+
+    <button type="submit">Save Grade</button>
+  </form>
+{% endblock %}

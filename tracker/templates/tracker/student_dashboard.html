@@ -1,0 +1,58 @@
+{% extends "tracker/base.html" %}
+{% block content %}
+<h2>Student Dashboard</h2>
+
+<!-- Results Page -->
+<div class="mb-3">
+  <a href="{% url 'student_results' %}" class="btn btn-primary">
+    📊 View All Results & Feedback
+  </a>
+</div>
+
+<h3>Assignments for Your Class</h3>
+{% for a in assignments %}
+  <div class="card mb-3 p-3">
+    <h5>{{ a.title }} (Max: {{ a.max_score }})</h5>
+    <p>{{ a.description }}</p>
+
+    <!-- Submission Form -->
+    <form method="post" action="{% url 'submit_assignment' a.pk %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-2">
+        <label>Answer File (required):</label>
+        <input type="file" name="answer_file" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <label>Answer Text (optional):</label>
+        <textarea name="answer_text" class="form-control"></textarea>
+      </div>
+      <button type="submit" class="btn btn-success btn-sm">Submit</button>
+    </form>
+  </div>
+{% empty %}
+  <p>No assignments available yet.</p>
+{% endfor %}
+
+<!-- <h3>Your Submissions by Subject</h3>
+{% if submissions %}
+  {% regroup submissions by assignment.subject.name as subject_list %}
+  {% for subject in subject_list %}
+    <h5>{{ subject.grouper }}</h5>
+    <ul>
+      {% for s in subject.list %}
+        <li>
+          {{ s.assignment.title }} →
+          {% if s.is_reviewed %}
+             {{ s.score }}/{{ s.assignment.max_score }}
+            (Feedback: {{ s.feedback|default:"None" }})
+          {% else %}
+            ⏳ Pending
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+{% else %}
+  <p>No submissions yet.</p>
+{% endif %} -->
+{% endblock %}

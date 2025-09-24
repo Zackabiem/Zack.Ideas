@@ -1,0 +1,44 @@
+{% extends "tracker/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Your Assignment Results</h2>
+  <table class="table table-bordered mt-3">
+    <thead>
+      <tr>
+        <th>Assignment</th>
+        <th>Submitted At</th>
+        <th>Score</th>
+        <th>Feedback</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for submission in submissions %}
+        <tr>
+          <td>{{ submission.assignment.title }}</td>
+          <td>{{ submission.submitted_at|date:"M d, Y H:i" }}</td>
+          <td>
+            {% if submission.score %}
+              {{ submission.score }}/{{ submission.assignment.max_score }}
+            {% else %}
+              Not graded
+            {% endif %}
+          </td>
+          <td>{{ submission.feedback|default:"-" }}</td>
+          <td>
+            {% if submission.is_reviewed %}
+              ✅ Reviewed
+            {% else %}
+              ⏳ Pending
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5">No submissions yet.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
